@@ -90,6 +90,7 @@ class Odds(callbacks.Plugin):
         # this is done because the host can sometimes be down and its good to have previous entries
         # when the game beguns.
         if (time.time() - self.cachetime) > 21600 or os.path.getsize(self.cachefile) < 1:
+            self.log.info("Trying to refresh XML odds file cache...")
             try:
                 request = urllib2.Request(url, headers={"Accept" : "application/xml"})
                 u = urllib2.urlopen(request)
@@ -147,19 +148,16 @@ class Odds(callbacks.Plugin):
             tmp['vspoddst'] = game.find('line').attrib['vspoddst'] # draw odds
             # do something here to bold the favorite.
             if tmp['spread'] and tmp['spread'] != "0":
-                self.log.info("MMA SPREAD")
                 if tmp['spread'].startswith('-'):
                     tmp['home'] = ircutils.bold(tmp['home'])
                 else:
                     tmp['away'] = ircutils.bold(tmp['away'])
             elif tmp['awayodds'] != "-" and tmp['homeodds'] != "-":
-                self.log.info("MMA ODDS")
                 if tmp['awayodds'] < tmp['homeodds']:
                     tmp['away'] = ircutils.bold(tmp['away'])
                 elif tmp['homeodds'] < tmp['awayodds']:
                     tmp['home'] = ircutils.bold(tmp['home'])
             elif tmp['vsprdoddst'] and tmp['hsprdoddst']:
-                self.log.info("MMA VSPRD")
                 if tmp['vsprdoddst'] < tmp['hsprdoddst']:
                     tmp['away'] = ircutils.bold(tmp['away'])
                 elif tmp['hsprdoddst'] < tmp['vsprdoddst']:
