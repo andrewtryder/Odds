@@ -121,29 +121,25 @@ class Odds(callbacks.Plugin):
         games = {}
         for i,game in enumerate(leagues):
             tmp = {}
-            tmp['sport'] = game.attrib['idspt']
-            tmp['gametype'] = game.attrib['idgmtyp']
-            tmp['date'] = game.attrib['gmdt']
-            tmp['time'] = game.attrib['gmtm']
+            tmp['sport'] = game.get('idspt')
+            tmp['gametype'] = game.get('idgmtyp')
+            tmp['date'] = game.get('gmdt')
+            tmp['time'] = game.get('gmtm')
             tmp['newdt'] = self._fixTime("{0} {1}".format(tmp['date'],tmp['time'])) # fixed date.
-            tmp['away'] = game.attrib['vtm']
-            tmp['home'] = game.attrib['htm'] 
-            tmp['vsprdoddst'] = game.find('line').attrib['vsprdoddst'] 
-            tmp['hsprdoddst'] = game.find('line').attrib['hsprdoddst']
-            tmp['awayodds'] = game.find('line').attrib['voddst'] 
-            tmp['homeodds'] = game.find('line').attrib['hoddst']
-            if tmp['awayodds'] == "": # if odds (ml) is blank, go -
-                tmp['awayodds'] = '-'
-            if tmp['homeodds'] == "":
-                tmp['homeodds'] = '-'
+            tmp['away'] = game.get('vtm')
+            tmp['home'] = game.get('htm') 
+            tmp['vsprdoddst'] = game.find('line').get('vsprdoddst') 
+            tmp['hsprdoddst'] = game.find('line').get('hsprdoddst')
+            tmp['awayodds'] = game.find('line').get('voddst')
+            tmp['homeodds'] = game.find('line').get('hoddst')
             if game.find('line').attrib['ovt']: # o/u total. abs/fix so its ###.#
-                tmp['over'] = "%.12g" % abs(float(game.find('line').attrib['ovt']))
+                tmp['over'] = "%.12g" % abs(float(game.find('line').get('ovt')))
             else:
                 tmp['over'] = None
-            tmp['spread'] = game.find('line').attrib['hsprdt'] # find the spread and fix.
+            tmp['spread'] = game.find('line').get('hsprdt') # find the spread and fix.
             if tmp['spread'] != "0" and not tmp['spread'].startswith('-') and tmp['spread'] != "": 
-                tmp['spread'] = "+{0}".format(tmp['spread']) #+ infront of non - spread
-            tmp['vspoddst'] = game.find('line').attrib['vspoddst'] # draw odds
+                tmp['spread'] = "+{0}".format(tmp['spread']) #hackey to get + infront of non - spread
+            tmp['vspoddst'] = game.find('line').get('vspoddst') # draw odds
             # do something here to bold the favorite.
             if tmp['spread'] and tmp['spread'] != "0":
                 if tmp['spread'].startswith('-'):
@@ -174,6 +170,7 @@ class Odds(callbacks.Plugin):
                         v['spread'],v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
         elif optsport == "NBA": 
             for (v) in games.values():
+                self.log.info(str(v))
                 if v['over'] is not None:
                     irc.reply("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'],v['home'],\
                         v['spread'],v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
