@@ -98,13 +98,11 @@ class Odds(callbacks.Plugin):
                 self.log.error("Failed to open: %s (%s)" % (url,e))
                 return
 
-            cache = open(self.cachefile, "w")
-            cache.writelines(u)
-            cache.close()
+            with open(self.cachefile, 'w') as cache:
+                cache.writelines(u)
+            self.log.info("Writing XML odds to cache.")
             self.cachetime = time.time()
 
-        # with open('podcasts.opml', 'rt') as f:
-        # tree = ElementTree.parse(f)
         try:
             tree = ElementTree.parse(self.cachefile)
         except ElementTree.ParseError, v:
