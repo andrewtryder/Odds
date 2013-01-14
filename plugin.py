@@ -49,7 +49,7 @@ class Odds(callbacks.Plugin):
         """For moneyline: string format a negative with red, positive with green."""
         try:
             if float(str(string).replace('.0','')) > 0:
-                string = ircutils.mircColor((str(string)), 'green')
+                string = ircutils.mircColor("+"+(str(string)), 'green')
             else:
                 string = ircutils.mircColor((str(string)), 'red')
             return string
@@ -69,7 +69,7 @@ class Odds(callbacks.Plugin):
         if (dt - datetime.datetime.now()) < datetime.timedelta(hours=160): # if within a week, show weekday name.
             return dt.strftime('%a %H:%M') 
         else:
-            return dt.strftime('%Y%m%d %H:%M')
+            return dt.strftime('%m/%d@%H:%M')
 
     def odds(self, irc, msg, args, optsport, optinput):
         """
@@ -189,8 +189,8 @@ class Odds(callbacks.Plugin):
         elif optsport == "MMA":
             for (v) in games.values():
                 if v['gametype'] == "29": # make sure it is a match
-                    self.log.info(str(v))
-                    irc.reply("{0} vs. {1}  {2}/{3}  {4}".format(v['away'],v['home'],v['vsprdoddst'],v['hsprdoddst'],v['newdt']))
+                    irc.reply("{0} vs. {1}  {2}/{3}  {4}".format(v['away'],v['home'],\
+                        self._fml(v['vsprdoddst']),self._fml(v['hsprdoddst']),v['newdt']))
 
 
     odds = wrap(odds, [('somethingWithoutSpaces'), optional('somethingWithoutSpaces')])
