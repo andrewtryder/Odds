@@ -47,13 +47,13 @@ class Odds(callbacks.Plugin):
 
     def _fml(self, string):
         """For moneyline: string format a negative with red, positive with green."""
-        try:
-            if float(str(string).replace('.0','')) > 0:
-                string = ircutils.mircColor("+"+(str(string)), 'green')
-            else:
-                string = ircutils.mircColor((str(string)), 'red')
-            return string
-        except:
+        if string == "":
+            return "-"
+        elif float(str(string).replace('.0','')) > 0:
+            return ircutils.mircColor("+"+(str(string)), 'green')
+        elif float(str(string).replace('.0','')) < 0:
+            return ircutils.mircColor((str(string)), 'red')
+        else:
             return ircutils.bold(string)
 
     def _dectoml(self, decimal):
@@ -94,14 +94,13 @@ class Odds(callbacks.Plugin):
             try:
                 request = urllib2.Request(url, headers={"Accept" : "application/xml"})
                 u = urllib2.urlopen(request)
+                with open(self.cachefile, 'w') as cache:
+                    cache.writelines(u)
+                self.log.info("Writing XML odds to cache.")
+                self.cachetime = time.time()
             except Exception,e:
                 self.log.error("Failed to open: %s (%s)" % (url,e))
                 return
-
-            with open(self.cachefile, 'w') as cache:
-                cache.writelines(u)
-            self.log.info("Writing XML odds to cache.")
-            self.cachetime = time.time()
 
         try:
             tree = ElementTree.parse(self.cachefile)
@@ -170,7 +169,6 @@ class Odds(callbacks.Plugin):
                         v['spread'],v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
         elif optsport == "NBA": 
             for (v) in games.values():
-                self.log.info(str(v))
                 if v['over'] is not None:
                     irc.reply("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'],v['home'],\
                         v['spread'],v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
