@@ -86,7 +86,11 @@ class Odds(callbacks.Plugin):
         """
 
         optsport = optsport.upper()
-        validsports = {'NFL':'1', 'NBA':'3', 'NCB':'4', 'EPL':'10003', 'LALIGA':'12159', 'MMA':'206'}
+        validsports = { 'NFL':'1', 'NBA':'3', 'NCB':'4', 
+                        'EPL':'10003', 'LALIGA':'12159', 'MMA':'206',
+                        'LIGUE1':'10005','BUNDESLIGA':'10004','SERIEA':'10002'
+                        }
+
 
         if not optsport in validsports:
             irc.reply("ERROR: sportname must be one of: {0}".format(validsports.keys()))
@@ -98,8 +102,6 @@ class Odds(callbacks.Plugin):
         # otherwise, grab via http and write + update the cachetime.
         # this is done because the host can sometimes be down and its good to have previous entries
         # when the game beguns.
-        self.log.info(str(self.cachetime))
-        self.log.info(str(time.time() - self.cachetime))
         if (time.time() - self.cachetime) > 21600 or os.path.getsize(self.cachefile) < 1:
             self.log.info("Trying to refresh XML odds file cache...")
             try:
@@ -182,7 +184,7 @@ class Odds(callbacks.Plugin):
                 if v['over'] is not None:
                     output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'],v['home'],\
                         v['spread'],v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
-        elif optsport == "EPL" or optsport == "LALIGA":
+        elif optsport in ('EPL','LALIGA','BUNDESLIGA','SERIEA','LIGUE1'):
             for (v) in games.values():
                 if v['gametype'] == "3": # make sure they're games.
                      output.append("{0}@{1}  o/u: {2}  {3}/{4} (Draw: {5})  {6}".format(v['away'],v['home'],\
