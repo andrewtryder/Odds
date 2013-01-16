@@ -47,6 +47,7 @@ class Odds(callbacks.Plugin):
         self.__parent.die()
 
     def _batch(self, iterable, size):
+        """ Batch generator for output. """
         c = count()
         for k, g in groupby(iterable, lambda x:c.next()//size):
             yield g
@@ -78,8 +79,10 @@ class Odds(callbacks.Plugin):
             return dt.strftime('%m/%d@%H:%M')
 
     def odds(self, irc, msg, args, optsport, optinput):
-        """
-        odds.
+        """<sport> [team]
+        Display various odds/lines for sporting events.
+        Sport must be one of: NFL, NBA, NCB, EPL, LALIGA, MMA, MLB, NHL.
+        Optional: add in string/team to search for. Ex: Odds EPL Manch or Odds NBA LA
         """
 
         optsport = optsport.upper()
