@@ -86,7 +86,7 @@ class Odds(callbacks.Plugin):
         """
 
         optsport = optsport.upper()
-        validsports = { 'NFL':'1', 'NBA':'3', 'NCB':'4', 
+        validsports = { 'NFL':'1', 'NBA':'3', 'NCB':'4','NHL':'7', 
                         'EPL':'10003', 'LALIGA':'12159', 'MMA':'206',
                         'LIGUE1':'10005','BUNDESLIGA':'10004','SERIEA':'10002'
                         }
@@ -170,10 +170,14 @@ class Odds(callbacks.Plugin):
 
         # preprocess output. each sport is different so work with it.
         output = []
-        if optsport == "NFL":
+        if optsport in "NFL":
             for (v) in games.values():
                 output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'],v['home'],\
                     v['spread'],v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
+        elif optsport == "NHL":
+            for (v) in games.values():
+                output.append("{0}@{1}  o/u: {2}  {3}/{4}  {5}".format(v['away'],v['home'],\
+                    v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))                
         elif optsport == "NCB":
             for (v) in games.values():
                 if v['spread'] != "":
