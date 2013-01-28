@@ -98,11 +98,11 @@ class Odds(callbacks.Plugin):
 
         url = 'http://lines.bookmaker.eu/'
 
-        # cache: if the cache time is >6hrs or no file, regrab via HTTP.
+        # cache: if the cache time is >6hrs or no file, or file older than 6 hours, regrab via HTTP.
         # otherwise, grab via http and write + update the cachetime.
         # this is done because the host can sometimes be down and its good to have previous entries
         # when the game beguns.
-        if (time.time() - self.cachetime) > 21600 or os.path.getsize(self.cachefile) < 1:
+        if ((time.time() - self.cachetime) > 21600) or (os.path.getsize(self.cachefile) < 1) or ((time.time() - os.stat(self.cachefile).st_mtime) > 21600):
             self.log.info("Trying to refresh XML odds file cache...")
             try:
                 request = urllib2.Request(url, headers={"Accept" : "application/xml"})
