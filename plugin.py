@@ -176,16 +176,17 @@ class Odds(callbacks.Plugin):
                     v['spread'],v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
         elif optsport == "NHL":
             for (v) in games.values():
-                output.append("{0}@{1}  o/u: {2}  {3}/{4}  {5}".format(v['away'],v['home'],\
-                    v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))                
+                if v['gametype'] == "1": # make sure they're games.
+                    output.append("{0}@{1}  o/u: {2}  {3}/{4}  {5}".format(v['away'],v['home'],\
+                        v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))                
         elif optsport == "NCB":
             for (v) in games.values():
-                if v['spread'] != "":
+                if v['spread'] != "" and (v['gametype'] == "1" or v['gametype'] == "3"):
                     output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'],v['home'],\
                         v['spread'],v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
         elif optsport == "NBA":
             for (v) in games.values():
-                if v['over'] is not None:
+                if v['over'] is not None and (v['gametype'] == "1" or v['gametype'] == "3"):
                     output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'],v['home'],\
                         v['spread'],v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
         elif optsport in ('EPL','LALIGA','BUNDESLIGA','SERIEA','LIGUE1'):
