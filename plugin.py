@@ -86,8 +86,8 @@ class Odds(callbacks.Plugin):
         """
 
         optsport = optsport.upper()
-        validsports = { 'NFL':'1', 'NBA':'3', 'NCB':'4','NHL':'7', 
-                        'EPL':'10003', 'LALIGA':'12159', 'MMA':'206',
+        validsports = { 'NFL':'1', 'NBA':'3', 'NCB':'4','NHL':'7', 'MLB':'5', 
+                        'EPL':'10003', 'LALIGA':'12159', 'MMA':'206', '10007':'MLS',
                         'LIGUE1':'10005','BUNDESLIGA':'10004','SERIEA':'10002'
                         }
 
