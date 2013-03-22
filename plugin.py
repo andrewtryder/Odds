@@ -181,7 +181,7 @@ class Odds(callbacks.Plugin):
                         v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))                
         elif optsport == "NCB":
             for (v) in games.values():
-                if v['spread'] != "" and (v['gametype'] == "1" or v['gametype'] == "3"):
+                if v['spread'] != "" and (v['gametype'] == "1" or v['gametype'] == "3" or v['gametype'] == "9"):
                     output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'],v['home'],\
                         v['spread'],v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
         elif optsport == "NBA":
