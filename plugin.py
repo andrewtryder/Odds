@@ -86,10 +86,11 @@ class Odds(callbacks.Plugin):
         """
 
         optsport = optsport.upper()
-        validsports = { 'NFL':'1', 'NBA':'3', 'NCB':'4','NHL':'7', 'MLB':'5',
+        validsports = {
+                        'NFL':'1', 'NBA':'3', 'NCB':'4','NHL':'7', 'MLB':'5',
                         'EPL':'10003', 'LALIGA':'12159', 'UFC-MMA':'206', 'UFC-BELLATOR':'12636',
                         'MLS':'10007', 'UEFA-CL':'10016', 'LIGUE1':'10005','BUNDESLIGA':'10004',
-                        'SERIEA':'10002', 'UEFA-EUROPA':'12613'
+                        'SERIEA':'10002', 'UEFA-EUROPA':'12613', 'BOXING':'12064'
                         }
 
 
@@ -109,10 +110,10 @@ class Odds(callbacks.Plugin):
                 u = urllib2.urlopen(request)
                 with open(self.cachefile, 'w') as cache:
                     cache.writelines(u)
-                self.log.info("Writing XML odds to cache.")
+                self.log.info("Writing XML odds to cache....")
                 self.cachetime = time.time()
-            except Exception,e:
-                self.log.error("Failed to open: %s (%s)" % (url,e))
+            except Exception, e:
+                self.log.error("Failed to open: %s (%s)" % (url, e))
                 return
         # now try and parse/open XML.
         try:
@@ -174,6 +175,7 @@ class Odds(callbacks.Plugin):
             games[int(i)] = tmp
 
         # preprocess output. each sport is different so work with it.
+        # everything goes into output list.
         output = []
         # handle NFL football.
         if optsport in "NFL":
@@ -219,6 +221,12 @@ class Odds(callbacks.Plugin):
                 if v['gametype'] == "29" or v['gametype'] == "2": # make sure it is a match
                     output.append("{0} vs. {1}  {2}/{3}  {4}".format(v['away'],v['home'],\
                         self._fml(v['vsprdoddst']),self._fml(v['hsprdoddst']),v['newdt']))
+        # handle boxing output.
+        elif optsport == "BOXING":
+            for (v) in games.values():
+                if v['gametype'] == "2":
+                    output.append("{0} vs. {1}  {2}/{3}  {4}".format(v['away'],v['home'],\
+                        self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
 
         # all output are in a list. first, check if we're not looking for optinput.
         # otherwise, if more than 9, we group together. otherwise, one per line.
