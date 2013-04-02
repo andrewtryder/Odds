@@ -81,24 +81,23 @@ class Odds(callbacks.Plugin):
     def odds(self, irc, msg, args, optsport, optinput):
         """<sport> [team]
         Display various odds/lines for sporting events.
-        Sport must be one of: NFL, NBA, NCB, EPL, LALIGA, MMA, MLB, NHL.
+        Sport must be one of: NFL, NBA, NCB, NCF, MLB, NHL. Issue odds sports to see a complete list.
         Optional: add in string/team to search for. Ex: Odds EPL Manch or Odds NBA LA
         """
 
         optsport = optsport.upper()
         validsports = { 'NFL':'1', 'NBA':'3', 'NCB':'4','NHL':'7', 'MLB':'5',
-                        'EPL':'10003', 'LALIGA':'12159', 'UFC-MMA':'206', 'MMA-BELLATOR':'12636', 
-			'MLS':'10007',
-                        'LIGUE1':'10005','BUNDESLIGA':'10004','SERIEA':'10002', 'EUROPA':'12613'
+                        'EPL':'10003', 'LALIGA':'12159', 'UFC-MMA':'206', 'UFC-BELLATOR':'12636',
+                        'MLS':'10007', 'UEFA-CL':'10016', 'LIGUE1':'10005','BUNDESLIGA':'10004',
+                        'SERIEA':'10002', 'UEFA-EUROPA':'12613'
                         }
 
 
         if not optsport in validsports:
-            irc.reply("ERROR: sportname must be one of: {0}".format(validsports.keys()))
+            irc.reply("ERROR: sportname must be one of: {0}".format(sorted(validsports.keys())))
             return
 
         url = 'http://lines.bookmaker.eu/'
-
         # cache: if the cache time is >6hrs or no file, or file older than 6 hours, regrab via HTTP.
         # otherwise, grab via http and write + update the cachetime.
         # this is done because the host can sometimes be down and its good to have previous entries
@@ -115,42 +114,46 @@ class Odds(callbacks.Plugin):
             except Exception,e:
                 self.log.error("Failed to open: %s (%s)" % (url,e))
                 return
-        # now try and parse/open XML. XPath to parse.
+        # now try and parse/open XML.
         try:
             tree = ElementTree.parse(self.cachefile)
         except ElementTree.ParseError, v:
             irc.reply("Something broke trying to parse the XML. Check logs.")
             return
-        root = tree.getroot()
+        # XPath to parse games of the sport we need to parse.
         leagues = tree.findall('./Leagues/league[@IdLeague="%s"]/game' % (validsports[optsport]))
-        if len(leagues) < 1:
+        if len(leagues) < 1:  # check if empty (no games) or nothing found (wrong time of the year).
             irc.reply("ERROR: No events have been found in the {0} category".format(optsport))
             return
 
         # process each entry and throw into games dict for output later.
         # we do a bit of formatting/logic here to help output processing.
         games = {}
-        for i,game in enumerate(leagues):
+        for i, game in enumerate(leagues):
+            self.log.info(str(game))
             tmp = {}
             tmp['sport'] = game.get('idspt')
-            tmp['gametype'] = game.get('idgmtyp')
-            tmp['date'] = game.get('gmdt')
-            tmp['time'] = game.get('gmtm')
-            tmp['newdt'] = self._fixTime("{0} {1}".format(tmp['date'],tmp['time'])) # fixed date.
-            tmp['away'] = game.get('vtm')
-            tmp['home'] = game.get('htm')
+            tmp['gametype'] = game.get('idgmtyp')  # gametype. used to detect props.
+            tmp['date'] = game.get('gmdt')  # game date.
+            tmp['time'] = game.get('gmtm')  # game time.
+            tmp['vpt'] = game.get('vpt')  # visiting pitcher.
+            tmp['hpt'] = game.get('hpt')  # home pitcher.
+            tmp['newdt'] = self._fixTime("{0} {1}".format(tmp['date'], tmp['time']))  # fixed date.
+            tmp['away'] = game.get('vtm')  # visiting/away team.
+            tmp['home'] = game.get('htm')  # home team.
+            tmp['haschild'] = game.find('line').get('haschild')  # odd XML var. checks for games.
             tmp['vsprdoddst'] = game.find('line').get('vsprdoddst')
             tmp['hsprdoddst'] = game.find('line').get('hsprdoddst')
             tmp['awayodds'] = game.find('line').get('voddst')
             tmp['homeodds'] = game.find('line').get('hoddst')
-            if game.find('line').attrib['ovt']: # o/u total. abs/fix so its ###.#
+            if game.find('line').attrib['ovt']:  # o/u total. abs/fix so its ###.#
                 tmp['over'] = "%.12g" % abs(float(game.find('line').get('ovt')))
-            else:
+            else:  # sometimes no o/u.
                 tmp['over'] = None
-            tmp['spread'] = game.find('line').get('hsprdt') # find the spread and fix.
+            tmp['spread'] = game.find('line').get('hsprdt')  # find the spread and fix.
             if tmp['spread'] != "0" and not tmp['spread'].startswith('-') and tmp['spread'] != "":
-                tmp['spread'] = "+{0}".format(tmp['spread']) #hackey to get + infront of non - spread
-            tmp['vspoddst'] = game.find('line').get('vspoddst') # draw odds
+                tmp['spread'] = "+{0}".format(tmp['spread'])  # hackey to get + infront of non - spread.
+            tmp['vspoddst'] = game.find('line').get('vspoddst')  # draw odds.
             # do something here to bold the favorite.
             if tmp['spread'] and tmp['spread'] != "0":
                 if tmp['spread'].startswith('-'):
@@ -167,39 +170,50 @@ class Odds(callbacks.Plugin):
                     tmp['away'] = ircutils.bold(tmp['away'])
                 elif tmp['hsprdoddst'] < tmp['vsprdoddst']:
                     tmp['home'] = ircutils.bold(tmp['home'])
-            games[int(i)] = tmp # now add
+            # now add
+            games[int(i)] = tmp
 
         # preprocess output. each sport is different so work with it.
         output = []
+        # handle NFL football.
         if optsport in "NFL":
             for (v) in games.values():
-                output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'],v['home'],\
-                    v['spread'],v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
+                if v['haschild'] == "True":
+                    output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'],v['home'],\
+                        v['spread'],v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
+        # handle baseball.
         elif optsport == "MLB":
             for (v) in games.values():
-                if v['gametype'] == "9" or v['gametype'] == "1": # make sure they're games.
-                    output.append("{0}@{1}  {2}/{3}  {4}".format(v['away'],v['home'],\
-                        self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
+                if v['haschild'] == "True":
+                    output.append("{0}@{1}  ({2} vs. {3})  {4}/{5}  {6}".format(v['away'],v['home'],\
+                        v['vpt'], v['hpt'], self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
+        # handle hockey.
         elif optsport == "NHL":
             for (v) in games.values():
-                if v['gametype'] == "1" or v['gametype'] == "9": # make sure they're games.
+                if v['haschild'] == "True":
                     output.append("{0}@{1}  o/u: {2}  {3}/{4}  {5}".format(v['away'],v['home'],\
                         v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
+        # handle college basketball output.
         elif optsport == "NCB":
             for (v) in games.values():
-                if v['spread'] != "" and (v['gametype'] == "1" or v['gametype'] == "3" or v['gametype'] == "9"):
+                #if v['spread'] != "" and (v['gametype'] == "1" or v['gametype'] == "3" or v['gametype'] == "9"):
+                if v['haschild'] == "True":
                     output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'],v['home'],\
                         v['spread'],v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
+        # handle NBA output.
         elif optsport == "NBA":
             for (v) in games.values():
-                if v['over'] is not None and (v['gametype'] == "1" or v['gametype'] == "3" or v['gametype'] == "9"):
+                #if v['over'] is not None and (v['gametype'] == "1" or v['gametype'] == "3" or v['gametype'] == "9"):
+                if v['haschild'] == "True":
                     output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'],v['home'],\
                         v['spread'],v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
-        elif optsport in ('EPL', 'LALIGA', 'BUNDESLIGA', 'SERIEA', 'LIGUE1', 'MLS', 'EUROPA'):
+        # handle soccer output.
+        elif optsport in ('EPL', 'LALIGA', 'BUNDESLIGA', 'SERIEA', 'LIGUE1', 'MLS', 'UEFA-EUROPA', 'UEFA-CL'):
             for (v) in games.values():
-                if v['gametype'] == "3" or v['gametype'] == "9": # make sure they're games.
+                if v['haschild'] == "True": # make sure they're games.
                      output.append("{0}@{1}  o/u: {2}  {3}/{4} (Draw: {5})  {6}".format(v['away'],v['home'],\
                         v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),self._fml(v['vspoddst']),v['newdt']))
+        # handle UFC output.
         elif optsport in ('UFC-MMA', 'UFC-BELLATOR'):
             for (v) in games.values():
                 if v['gametype'] == "29" or v['gametype'] == "2": # make sure it is a match
@@ -212,10 +226,9 @@ class Odds(callbacks.Plugin):
             if len(output) <= 9:
                 for each in output: irc.reply(each)
             elif len(output) > 9:
-                #self.log.info(str(sum(len(s) for s in output)))
                 for N in self._batch(output, 4):
                     irc.reply(" | ".join([item for item in N]))
-        else: # handle optinput
+        else:  # handle optinput
             count = 0
             for each in output:
                 if optinput.lower() in each.lower() or optinput.lower() in each.lower():
@@ -223,7 +236,7 @@ class Odds(callbacks.Plugin):
                         irc.reply(each)
                         count += 1
                     else:
-                        irc.reply("I found too many results for '{0}' in {1}. Please specify something more specific".format(optinput,optsport))
+                        irc.reply("I found too many results for '{0}' in {1}. Please specify something more specific".format(optinput, optsport))
                         break
 
     odds = wrap(odds, [('somethingWithoutSpaces'), optional('somethingWithoutSpaces')])
