@@ -131,7 +131,6 @@ class Odds(callbacks.Plugin):
         # we do a bit of formatting/logic here to help output processing.
         games = {}
         for i, game in enumerate(leagues):
-            self.log.info(str(game))
             tmp = {}
             tmp['sport'] = game.get('idspt')
             tmp['gametype'] = game.get('idgmtyp')  # gametype. used to detect props.
@@ -140,8 +139,8 @@ class Odds(callbacks.Plugin):
             tmp['vpt'] = game.get('vpt')  # visiting pitcher.
             tmp['hpt'] = game.get('hpt')  # home pitcher.
             tmp['newdt'] = self._fixTime("{0} {1}".format(tmp['date'], tmp['time']))  # fixed date.
-            tmp['away'] = game.get('vtm')  # visiting/away team.
-            tmp['home'] = game.get('htm')  # home team.
+            tmp['away'] = game.get('vtm').encode('utf-8')  # visiting/away team.
+            tmp['home'] = game.get('htm').encode('utf-8')  # home team.
             tmp['haschild'] = game.find('line').get('haschild')  # odd XML var. checks for games.
             tmp['vsprdoddst'] = game.find('line').get('vsprdoddst')
             tmp['hsprdoddst'] = game.find('line').get('hsprdoddst')
