@@ -223,7 +223,7 @@ class Odds(callbacks.Plugin):
         # handle boxing output.
         elif optsport == "BOXING":
             for (v) in games.values():
-                if v['gametype'] == "2":
+                if v['gametype'] == "2" and v['haschild'] == "True":
                     output.append("{0} vs. {1}  {2}/{3}  {4}".format(v['away'],v['home'],\
                         self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
 
@@ -246,7 +246,7 @@ class Odds(callbacks.Plugin):
                         irc.reply("I found too many results for '{0}' in {1}. Please specify something more specific".format(optinput, optsport))
                         break
 
-    odds = wrap(odds, [('somethingWithoutSpaces'), optional('somethingWithoutSpaces')])
+    odds = wrap(odds, [('somethingWithoutSpaces'), optional('text')])
 
 Class = Odds
 
