@@ -81,7 +81,7 @@ class Odds(callbacks.Plugin):
     def odds(self, irc, msg, args, optsport, optinput):
         """<sport> [team]
         Display various odds/lines for sporting events.
-        Sport must be one of: NFL, NBA, NCB, NCF, MLB, NHL. Issue odds sports to see a complete list.
+        Issue odds sports to see a complete list of valid sports.
         Optional: add in string/team to search for. Ex: Odds EPL Manch or Odds NBA LA
         """
 
