@@ -223,7 +223,7 @@ class Odds(callbacks.Plugin):
         # handle boxing output.
         elif optsport == "BOXING":
             for (v) in games.values():
-                if v['gametype'] == "2" and v['haschild'] == "True":
+                if v['gametype'] in ["2", "3"] or v['haschild'] == "True":
                     output.append("{0} vs. {1}  {2}/{3}  {4}".format(v['away'],v['home'],\
                         self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
 
