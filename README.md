@@ -2,9 +2,9 @@ Supybot-Odds
 ============
 
 Description
-    
-    Supybot plugin for displaying sports (MLB/NFL/NHL/NBA/MMA/NCAA (College) Football/Basketball
-    lines/odds/betting.
+
+    Supybot plugin for displaying sports MLB/NFL/NHL/NBA/MMA/NCAA/Tennis/AFL
+    (College) Football/Basketball lines/odds/betting.
 
 History
 
@@ -15,22 +15,22 @@ History
     still display odds if the provider has gone down.
 
 Disclaimer
-    
+
     Obviously, gambling is illegal in many places. I don't condone nor support it. The intent of
-    this plugin is for a user on IRC to get an idea of who is favored in a game, which a line or 
+    this plugin is for a user on IRC to get an idea of who is favored in a game, which a line or
     odds provide.
 
 Instructions
 
     First, if you're running Odds2, you can uninstall (rm -rf) and unload.
     Next, download, install and load this. There are no configuration variables (yet).
-    Consider this beta.
 
 Notes
-    
+
     The following links helped quite a bit:
-    
+
     http://forum.punterslounge.com/threads/30348-XML-Odds-feed
     http://forum.sbrforum.com/handicapper-think-tank/538127-sportsbook-xml-feeds-p2.html
     http://livelines.betonline.com/sys/LineXML/LiveLineObjXml.asp?sport=Basketball&subsport=NBA
-
+    http://xmlfeed.intertops.com/XMLOddsFeed/IntertopsOdds.aspx?all=true&lan=E&
+    http://xmlfeed.intertops.com/XMLOddsFeed/
