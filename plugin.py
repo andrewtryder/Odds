@@ -212,7 +212,7 @@ class Odds(callbacks.Plugin):
                        'EPL':'10003', 'LALIGA':'12159', 'UFC-MMA':'206', 'UFC-BELLATOR':'12636',
                        'MLS':'10007', 'UEFA-CL':'10016', 'LIGUE1':'10005','BUNDESLIGA':'10004',
                        'SERIEA':'10002', 'UEFA-EUROPA':'12613', 'BOXING':'12064',
-                       'TENNIS-M':'12331', 'TENNIS-W':'12332' }
+                       'TENNIS-M':'12331', 'TENNIS-W':'12332', 'AUSSIERULES':'12118'}
         if not optsport in validsports:  # error if not in above.
             validprops = { 'NFL-SUPERBOWL':'1561335', 'NFL-MVP':'1583283'}
             if optsport in validprops:
@@ -271,6 +271,11 @@ class Odds(callbacks.Plugin):
         elif optsport in ('TENNIS-M', 'TENNIS-W'):
             for (v) in games.values():
                 #if v['haschild'] == "True":
+                output.append("{0}@{1}  {2}/{3}  {4}".format(v['away'],v['home'],\
+                    self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
+        # handle aussie rules.
+        elif optsport == "AUSSIERULES":
+            for (v) in games.values():
                 output.append("{0}@{1}  {2}/{3}  {4}".format(v['away'],v['home'],\
                     self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
         # handle baseball.
