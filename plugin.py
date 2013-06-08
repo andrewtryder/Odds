@@ -6,19 +6,18 @@
 #
 ###
 # my libs
-import datetime
+import datetime  # timeops/datefix.
 import os  # fs ops.
 try:  # xml handling.
     import xml.etree.cElementTree as ElementTree
 except ImportError:
     import xml.etree.ElementTree as ElementTree
 from itertools import groupby, count  # batch.
+from operator import itemgetter  # sorting.
 # extra supybot libs
-import supybot.log as log
 import supybot.conf as conf
 import supybot.schedule as schedule
 # supybot libs
-import supybot.conf as conf
 import supybot.utils as utils
 from supybot.commands import *
 import supybot.plugins as plugins
@@ -71,7 +70,10 @@ class Odds(callbacks.Plugin):
                 return
             # we have response object. test and verify the XML.
             try:  # try to parse for validity.
-                ElementTree.fromstring(response)
+                tree = ElementTree.fromstring(response)  # look for an error code.
+                if tree.attrib['ErrorCode'] != "0":  # 0 means no error. anything else = error.
+                    self.log.error("CacheXML: ERROR in XML fetched. :: {0}".format(tree.attrib['ErrorMessage']))
+                    return
             except ElementTree.ParseError, e: # if there is an exception, report and return.
                 self.log.error("CacheXML: ERROR PARSING received XML: {0}".format(e))
                 return
@@ -129,6 +131,14 @@ class Odds(callbacks.Plugin):
         else:  # later than a week from now. ad month/day@HH:MM
             return dt.strftime('%m/%d@%H:%M')
 
+    def _dttoepoch(self, dtstr):
+        """Takes dtstr, does delta, and returns epoch seconds for sorting."""
+
+        dtobj = datetime.datetime.strptime(dtstr, '%Y%m%d %H:%M:%S')
+        secs = (dtobj - datetime.datetime(1970,1,1)).total_seconds()
+        #return int(round(secs))  # round the float, conv to integer
+        return secs  # float
+
     ######################################
     # ODDS PROCESSING INTERNAL FUNCTIONS #
     ######################################
@@ -141,8 +151,9 @@ class Odds(callbacks.Plugin):
         tmp['gametype'] = game.get('idgmtyp')  # gametype. used to detect props.
         tmp['date'] = game.get('gmdt')  # game date.
         tmp['time'] = game.get('gmtm')  # game time.
-        tmp['vpt'] = game.get('vpt')  # visiting pitcher.
-        tmp['hpt'] = game.get('hpt')  # home pitcher.
+        tmp['dt'] = self._dttoepoch("{0} {1}".format(tmp['date'], tmp['time']))  # epoch seconds.
+        tmp['vpt'] = game.get('vpt')  # visiting pitcher. (mlb)
+        tmp['hpt'] = game.get('hpt')  # home pitcher. (mlb)
         tmp['newdt'] = self._fixtime("{0} {1}".format(tmp['date'], tmp['time']))  # fixed date.
         tmp['away'] = game.get('vtm').encode('utf-8')  # visiting/away team.
         tmp['home'] = game.get('htm').encode('utf-8')  # home team.
@@ -169,7 +180,7 @@ class Odds(callbacks.Plugin):
         if tmp['spread'] and tmp['spread'] != '' and tmp['spread'] != "0":  # first try to use the spread if it's there. then turn to odds.
             if tmp['spread'].startswith('-'):  # if the spread is -, the hometeam is favored.
                 tmp['home'] = ircutils.bold(tmp['home'])
-            else:  # we bold
+            else:  # we bold the away team because it's + or regular number.
                 tmp['away'] = ircutils.bold(tmp['away'])
         elif tmp['awayodds'] != "-" and tmp['homeodds'] != "-" and tmp['awayodds'] != '' and tmp['homeodds'] != '':
             if tmp['awayodds'] < tmp['homeodds']:
@@ -184,7 +195,7 @@ class Odds(callbacks.Plugin):
 
         tmp = {}
         tmp['tmname'] = prop.get('tmname').encode('utf-8')
-        tmp['line'] = int(prop.get('odds'))
+        tmp['line'] = int(prop.get('odds'))  # to sort.
         return tmp
 
     #########
@@ -211,8 +222,8 @@ class Odds(callbacks.Plugin):
         validsports = {'NFL':'1', 'NBA':'3', 'NCB':'4','NHL':'7', 'MLB':'5',
                        'EPL':'10003', 'LALIGA':'12159', 'UFC-MMA':'206', 'UFC-BELLATOR':'12636',
                        'MLS':'10007', 'UEFA-CL':'10016', 'LIGUE1':'10005','BUNDESLIGA':'10004',
-                       'SERIEA':'10002', 'UEFA-EUROPA':'12613', 'BOXING':'12064',
-                       'TENNIS-M':'12331', 'TENNIS-W':'12332', 'AUSSIERULES':'12118'}
+                       'SERIEA':'10002', 'UEFA-EUROPA':'12613', 'BOXING':'12064', 'TENNIS-M':'12331',
+                       'TENNIS-W':'12332', 'AUSSIERULES':'12118', 'GOLF':'12003'}
         if not optsport in validsports:  # error if not in above.
             validprops = { 'NFL-SUPERBOWL':'1561335', 'NFL-MVP':'1583283'}
             if optsport in validprops:
@@ -223,114 +234,127 @@ class Odds(callbacks.Plugin):
                 return
 
         # now try and parse/open XML.
-        # we then have to process games and lines differently.
         try:
             tree = ElementTree.parse(self.CACHEFILE)
         except ElementTree.ParseError, e:
             self.log.error("ERROR: parsing cached XML :: {0}".format(e))
             irc.reply("ERROR: Something broke trying to parse the XML. Check logs.")
             return
+
         # now that we have XML, it must be processed differently depending on props/games.
-        if optsport == "PROP":  # processing PROPS here.
-            lines = tree.findall(".//game[@idgm='%s']/line" % validprops[optprop])
-            if len(lines) == 0:  # prop or no items found inside the prop.
-                irc.reply("ERROR: I did not find {0} line or any odds in it.".format(optprop))
+        if optsport == "GOLF":  # specific handler for golf. we label sport but handle as prop.
+            line = tree.findall('./Leagues/league[@IdLeague="%s"]/game' % validsports[optsport])
+            # we only grab the first [0]. we could do more than one.
+            propname = line[0].attrib['htm']  # tournament here.
+            props = []  # list to dump out in for processing.
+            for l in (line[0].findall('line')):  # we enumerate over all "line" in the entry.
+                props.append(self._processprop(l))  # send to prop handler and append.
+            # now sort (lowest first) before we prep the output. (creates a list w/dict in it.)
+            props = sorted(props, key=itemgetter('line'))
+        elif optsport == "PROP":  # processing PROPS/futures here.
+            line = tree.find(".//game[@idgm='%s']" % validprops[optprop])
+            if not line:  # prop or no items found inside the prop.
+                irc.reply("ERROR: I did not find {0} prop/future or any odds in it.".format(optprop))
                 return
-            # we did find prop+lines, so process each one.
-            props = {}  # everything goes into props dict so we can sort.
-            for i, line in enumerate(lines):  # must add with unique key since some odds are same.
-                tmp = self._processprop(line)  # send to prop handler.
-                props[i] = tmp
-            props = sorted(props.items(), key=lambda x: x[1])  # sort. lowest odds first.
+            # we did find prop+lines, so lets grab the name and the lines.
+            propname = line.attrib['htm']  # htm contains the "name" of the prop/future.
+            props = []  # everything goes into props dict so we can sort.
+            for l in (line.findall('line')):  # we enumerate over all "line" in the entry.
+                props.append(self._processprop(l))  # send to prop handler and append.
+            # now sort (lowest first) before we prep the output. (creates a list w/dict in it.)
+            props = sorted(props, key=itemgetter('line'))
         else:  # processing GAMES here not props.
             leagues = tree.findall('./Leagues/league[@IdLeague="%s"]/game' % (validsports[optsport]))
             if len(leagues) == 0:  # check if empty (no games) or nothing found (wrong time of the year).
                 irc.reply("ERROR: I did not find any events in the {0} category.".format(optsport))
                 return
             # we must process each "game" or match.
-            games = {}  # k will be an int++ and value = game string.
-            for i, game in enumerate(leagues):
-                tmp = self._processgame(game)  # send to game .handler.
-                games[i] = tmp  # now add our game into the dict.
+            games = []  # list to store dicts of processed games.
+            for game in leagues:  # each entry is a game/match.
+                games.append(self._processgame(game))  # add processesed xml list.
+            # now, we should sort by dt (epoch seconds) with output (earliest first).
+            games = sorted(games, key=itemgetter('newdt'))
 
         # now, we must preprocess the output in the dicts.
         # each sport is different and we append into a list for output.
         output = []
-        # first, handle props and props only.
-        if optsport == "PROP":  # we join all of the props/lines into one entry.
-            proplist = " | ".join([q['tmname'].title() + " (" + self._fml(str(q['line'])) + ")" for (v, q) in props])
-            output.append("{0} :: {1}".format(ircutils.mircColor(optprop, 'red'), proplist))
+        # first, handle props and prop-like sports (GOLF ONLY).
+        if optsport == "PROP" or optsport == "GOLF":  # we join all of the props/lines into one entry. title.
+            proplist = " | ".join([q['tmname'].title() + " (" + self._fml(q['line']) + ")" for q in props])
+            output.append("{0} :: {1}".format(ircutils.mircColor(propname, 'red'), proplist))
         # REST ARE NON-PROP. EACH HANDLES A SPORT DIFFERENTLY.
         # handle NFL football.
         elif optsport == "NFL":
-            for (v) in games.values():
-                if v['haschild'] == "True":
-                    output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'],v['home'],\
-                        v['spread'],v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
-        # handle tennis:
+            for (v) in games:
+                if v['spread'] != "":
+                    output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'], v['home'],\
+                        v['spread'], v['over'], self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
+        # handle tennis.
         elif optsport in ('TENNIS-M', 'TENNIS-W'):
-            for (v) in games.values():
-                #if v['haschild'] == "True":
-                output.append("{0}@{1}  {2}/{3}  {4}".format(v['away'],v['home'],\
-                    self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
+            for v in games:
+                output.append("{0}@{1}  {2}/{3}  {4}".format(v['away'], v['home'],\
+                    self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
         # handle aussie rules.
         elif optsport == "AUSSIERULES":
-            for (v) in games.values():
-                output.append("{0}@{1}  {2}/{3}  {4}".format(v['away'],v['home'],\
-                    self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
+            for (v) in games:
+                output.append("{0}@{1}  {2}/{3}  {4}".format(v['away'], v['home'],\
+                    self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
         # handle baseball.
         elif optsport == "MLB":
-            for (v) in games.values():
+            for (v) in games:
                 if v['haschild'] == "True":
-                    output.append("{0}@{1}  {2}/{3}  {4}".format(v['away'],v['home'],\
-                        self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
+                    output.append("{0}@{1}  {2}/{3}  {4}".format(v['away'], v['home'],\
+                        self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
         # handle hockey.
         elif optsport == "NHL":
-            for (v) in games.values():
+            for (v) in games:
                 if v['haschild'] == "True":
-                    output.append("{0}@{1}  o/u: {2}  {3}/{4}  {5}".format(v['away'],v['home'],\
-                        v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
+                    output.append("{0}@{1}  o/u: {2}  {3}/{4}  {5}".format(v['away'], v['home'],\
+                        v['over'], self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
         # handle college basketball output.
         elif optsport == "NCB":
-            for (v) in games.values():
+            for (v) in games:
                 #if v['spread'] != "" and (v['gametype'] == "1" or v['gametype'] == "3" or v['gametype'] == "9"):
                 if v['haschild'] == "True":
-                    output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'],v['home'],\
-                        v['spread'],v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
+                    output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'], v['home'],\
+                        v['spread'], v['over'], self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
         # handle NBA output.
         elif optsport == "NBA":
-            for (v) in games.values():
+            for (v) in games:
                 #if v['over'] is not None and (v['gametype'] == "1" or v['gametype'] == "3" or v['gametype'] == "9"):
                 if v['haschild'] == "True":
-                    output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'],v['home'],\
-                        v['spread'],v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
+                    output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'], v['home'],\
+                        v['spread'], v['over'], self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
         # handle soccer output.
         elif optsport in ('EPL', 'LALIGA', 'BUNDESLIGA', 'SERIEA', 'LIGUE1', 'MLS', 'UEFA-EUROPA', 'UEFA-CL'):
-            for (v) in games.values():
+            for (v) in games:
                 if v['haschild'] == "True": # make sure they're games.
-                     output.append("{0}@{1}  o/u: {2}  {3}/{4} (Draw: {5})  {6}".format(v['away'],v['home'],\
-                        v['over'],self._fml(v['awayodds']),self._fml(v['homeodds']),self._fml(v['vspoddst']),v['newdt']))
+                     output.append("{0}@{1}  o/u: {2}  {3}/{4} (Draw: {5})  {6}".format(v['away'], v['home'],\
+                        v['over'], self._fml(v['awayodds']), self._fml(v['homeodds']), self._fml(v['vspoddst']), v['newdt']))
         # handle UFC output.
         elif optsport in ('UFC-MMA', 'UFC-BELLATOR'):
-            for (v) in games.values():
+            for (v) in games:
                 #if v['gametype'] in ("29", "2"): # or v['gametype'] == "2": # make sure it is a match
                 if v['homeodds'] != '' and v['awayodds'] != '':
-                    output.append("{0} vs. {1}  {2}/{3}  {4}".format(v['away'],v['home'],\
-                        self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
+                    output.append("{0} vs. {1}  {2}/{3}  {4}".format(v['away'], v['home'],\
+                        self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
         # handle boxing output.
         elif optsport == "BOXING":
-            for (v) in games.values():
+            for (v) in games:
                 # if v['gametype'] in ["2", "3"] or v['haschild'] == "True": # not sure if this will work or not.
                 if v['homeodds'] != '' and v['awayodds'] != '':
-                    output.append("{0} vs. {1}  {2}/{3}  {4}".format(v['away'],v['home'],\
-                        self._fml(v['awayodds']),self._fml(v['homeodds']),v['newdt']))
+                    output.append("{0} vs. {1}  {2}/{3}  {4}".format(v['away'], v['home'],\
+                        self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
 
         # output time.
         # checks if optinput (looking for something)
         if not optinput or optsport == "PROP":  # just display the games.
-            if len(output) <= 9:  # 9 or under, one per line.
+            outlength = len(output)  # calc once.
+            if outlength == 0:  # nothing.
+                irc.reply("Sorry, I did not find any active odds in {0}.".format(optsport))
+            if outlength <= 9:  # 9 or under, one per line.
                 for each in output: irc.reply(each)
-            elif len(output) > 9:  # more than 9, we batch 4 per line.
+            else:  # more than 9, we batch 4 per line.
                 for N in self._batch(output, 4):
                     irc.reply(" | ".join([item for item in N]))
         else:  # we do want to limit output to only matching items.
@@ -340,9 +364,12 @@ class Odds(callbacks.Plugin):
                     if count < 5:  # output matching items.
                         irc.reply(each)
                         count += 1 # ++
-                    else:  # too many.
+                    else:  # too many to output after 5. breaks,
                         irc.reply("I found too many results for '{0}'. Please specify something more specific".format(optinput))
                         break
+            # last check for if we outputted NOTHING.
+            if count == 0:  # nothing came out.
+                irc.reply("Sorry, I did not find any odds matching '{0}' in {1} category.".format(optinput, optsport))
 
     odds = wrap(odds, [('somethingWithoutSpaces'), optional('text')])
 
