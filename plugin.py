@@ -39,13 +39,13 @@ class Odds(callbacks.Plugin):
         self.XMLURL = 'http://lines.bookmaker.eu/'
         self.CACHEFILE = conf.supybot.directories.data.dirize("Odds.xml")
         try: # every 3hours make sure the schedule is fresh.
-            schedule.addPeriodicEvent(self.cachexml(), 7200, now=True, name='cachexml')
+            schedule.addPeriodicEvent(self.cachexml, 3600, now=True, name='cachexml')
         except AssertionError:
             try:
                 schedule.removeEvent('cachexml')
             except KeyError:
                 pass
-            schedule.addPeriodicEvent(self.cachexml(), 7200, now=True, name='cachexml')
+            schedule.addPeriodicEvent(self.cachexml, 3600, now=True, name='cachexml')
 
     def die(self):
         try:
@@ -223,7 +223,9 @@ class Odds(callbacks.Plugin):
                        'EPL':'10003', 'LALIGA':'12159', 'UFC-MMA':'206', 'UFC-BELLATOR':'12636',
                        'MLS':'10007', 'UEFA-CL':'10016', 'LIGUE1':'10005','BUNDESLIGA':'10004',
                        'SERIEA':'10002', 'UEFA-EUROPA':'12613', 'BOXING':'12064', 'TENNIS-M':'12331',
-                       'TENNIS-W':'12332', 'AUSSIERULES':'12118', 'GOLF':'12003'}
+                       'TENNIS-W':'12332', 'AUSSIERULES':'12118', 'GOLF':'12003', 'WCQ-UEFA':'12321',
+                       'WCQ-CONMEBOL':'12451', 'WCQ-CAF':'12461', 'WCQ-CONCACAF':'12484' }
+
         if not optsport in validsports:  # error if not in above.
             validprops = { 'NFL-SUPERBOWL':'1561335', 'NFL-MVP':'1583283'}
             if optsport in validprops:
@@ -326,9 +328,11 @@ class Odds(callbacks.Plugin):
                     output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'], v['home'],\
                         v['spread'], v['over'], self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
         # handle soccer output.
-        elif optsport in ('EPL', 'LALIGA', 'BUNDESLIGA', 'SERIEA', 'LIGUE1', 'MLS', 'UEFA-EUROPA', 'UEFA-CL'):
+        elif optsport in ('EPL', 'LALIGA', 'BUNDESLIGA', 'SERIEA', 'LIGUE1', 'MLS', 'UEFA-EUROPA', 'UEFA-CL',
+                          'WCQ-UEFA', 'WCQ-CONMEBOL', 'WCQ-CAF', 'WCQ-CONCACAF'):
             for (v) in games:
-                if v['haschild'] == "True": # make sure they're games.
+                #if v['haschild'] == "True": # make sure they're games.
+                if v['homeodds'] != '' and v['awayodds'] != '':
                      output.append("{0}@{1}  o/u: {2}  {3}/{4} (Draw: {5})  {6}".format(v['away'], v['home'],\
                         v['over'], self._fml(v['awayodds']), self._fml(v['homeodds']), self._fml(v['vspoddst']), v['newdt']))
         # handle UFC output.
