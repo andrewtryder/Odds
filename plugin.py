@@ -131,14 +131,6 @@ class Odds(callbacks.Plugin):
         else:  # later than a week from now. ad month/day@HH:MM
             return dt.strftime('%m/%d@%H:%M')
 
-    def _dttoepoch(self, dtstr):
-        """Takes dtstr, does delta, and returns epoch seconds for sorting."""
-
-        dtobj = datetime.datetime.strptime(dtstr, '%Y%m%d %H:%M:%S')
-        secs = (dtobj - datetime.datetime(1970,1,1)).total_seconds()
-        #return int(round(secs))  # round the float, conv to integer
-        return secs  # float
-
     ######################################
     # ODDS PROCESSING INTERNAL FUNCTIONS #
     ######################################
@@ -151,7 +143,6 @@ class Odds(callbacks.Plugin):
         tmp['gametype'] = game.get('idgmtyp')  # gametype. used to detect props.
         tmp['date'] = game.get('gmdt')  # game date.
         tmp['time'] = game.get('gmtm')  # game time.
-        tmp['dt'] = self._dttoepoch("{0} {1}".format(tmp['date'], tmp['time']))  # epoch seconds.
         tmp['vpt'] = game.get('vpt')  # visiting pitcher. (mlb)
         tmp['hpt'] = game.get('hpt')  # home pitcher. (mlb)
         tmp['newdt'] = self._fixtime("{0} {1}".format(tmp['date'], tmp['time']))  # fixed date.
@@ -203,7 +194,8 @@ class Odds(callbacks.Plugin):
     #########
 
     # <league IdLeague="12003" IdSport="TNT" Description="GOLF PICK WINNER">
-    # <game idgm="1582092" idgmtyp="3" gmdt="20130613" idlg="0" gmtm="06:00:00" idspt="TNT" vpt="" hpt="" vnum="0" hnum="0" evtyp="" idgp="0" gpd="" vtm="" htm="WIN US OPEN- (JUNE 13-16) ALL IN" stats="false">
+    # <game idgm="1582092" idgmtyp="3" gmdt="20130613" idlg="0" gmtm="06:00:00" idspt="TNT" vpt="" hpt="" vnum="0"
+    # hnum="0" evtyp="" idgp="0" gpd="" vtm="" htm="WIN US OPEN- (JUNE 13-16) ALL IN" stats="false">
     # and it's a prop. does IdLeague change?
 
     ####################
