@@ -38,3 +38,4 @@ Notes
     http://pdom.org/wiki/Беттинг
     http://pricefeeds.williamhill.com/bet/en-gb?action=GoPriceFeed
     http://www.pinnaclesports.com/apimanual/commands.aspx
+    https://forum.bdp.betfair.com/showthread.php?t=1832&page=2
