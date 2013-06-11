@@ -40,14 +40,14 @@ class Odds(callbacks.Plugin):
         self.CACHEFILE = conf.supybot.directories.data.dirize("Odds.xml")
         def cachexmlcron():
             self.cachexml()
-        try: # every 3hours make sure the schedule is fresh.
-            schedule.addPeriodicEvent(cachexmlcron, 10800, now=True, name='cachexml')
+        try: # every 1hours make sure the schedule is fresh.
+            schedule.addPeriodicEvent(cachexmlcron, 3600, now=True, name='cachexml')
         except AssertionError:
             try:
                 schedule.removeEvent('cachexml')
             except KeyError:
                 pass
-            schedule.addPeriodicEvent(cachexmlcron, 10800, now=True, name='cachexml')
+            schedule.addPeriodicEvent(cachexmlcron, 3600, now=True, name='cachexml')
 
     def die(self):
         try:
@@ -61,7 +61,7 @@ class Odds(callbacks.Plugin):
 
         self.log.info("CacheXML: Running...")
         if (not os.path.isfile(self.CACHEFILE) or (os.path.getsize(self.CACHEFILE) < 1)
-            or (self._now() - os.stat(self.CACHEFILE).st_mtime > 3600)): # no file, under 1 byte, 20 minutes old.
+            or (self._now() - os.stat(self.CACHEFILE).st_mtime > 9000)): # no file, under 1 byte, 2.5 hours old.
             self.log.info("CacheXML: File does not exist, is too small or old. Fetching.")
             try:
                 response = utils.web.getUrl(self.XMLURL)
