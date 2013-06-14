@@ -7,6 +7,7 @@
 ###
 # my libs
 import datetime  # timeops/datefix.
+import pytz  # timeops/datefix.
 import os  # fs ops.
 try:  # xml handling.
     import xml.etree.cElementTree as ElementTree
@@ -36,6 +37,7 @@ class Odds(callbacks.Plugin):
     def __init__(self, irc):
         self.__parent = super(Odds, self)
         self.__parent.__init__(irc)
+        self.displaytz = self.registryValue('displayTZ')
         self.XMLURL = 'http://lines.bookmaker.eu/'
         self.CACHEFILE = conf.supybot.directories.data.dirize("Odds.xml")
         def cachexmlcron():
@@ -95,6 +97,7 @@ class Odds(callbacks.Plugin):
 
         td = datetime.datetime.utcnow() - datetime.datetime(1970,1,1)
         now = (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 1e6
+        # total.seconds()
         return now
 
     def _batch(self, iterable, size):
@@ -124,13 +127,36 @@ class Odds(callbacks.Plugin):
         else:
             return "%d" % (-100/(float(decimal)-1))
 
-    def _fixtime(self, date):
-        """Clean up dt string. Add 3 hours due to PT. If dt > week later, add date."""
+    def _local_to_utc(self, dt, tz_name):
+        """Convert a dt string, given tz, to UTC. Return UTC dt object."""
 
-        dt = datetime.datetime.strptime(date, '%Y%m%d %H:%M:%S') + datetime.timedelta(hours=3)
-        if (dt - datetime.datetime.now()) < datetime.timedelta(hours=160):
-            return dt.strftime('%a %H:%M')  # earlier than a week so just d/t.
-        else:  # later than a week from now. ad month/day@HH:MM
+        dt = pytz.timezone(tz_name).localize(dt)
+        utc_dt = pytz.utc.normalize(dt.astimezone(pytz.utc))
+        return utc_dt
+
+    def _utc_to_local(self, dt, tz_name):
+        """Takes a UTC dt object, convert to localized based on tz_name."""
+
+        local_tz = pytz.timezone(tz_name)
+        dt = local_tz.normalize(dt.astimezone(local_tz))
+        return dt
+
+    def _fixtime(self, date):
+        """Convert a datetime string into a localized dt object."""
+
+        dt = datetime.datetime.strptime(date, '%Y%m%d %H:%M:%S') # datetime string into dt object.
+        dt = self._local_to_utc(dt, "US/Pacific")  # normalize time into UTC from Pacific.
+        dt = self._utc_to_local(dt, self.displaytz)  # now we "localize" the dtobject to what we want out.
+        # now, we're gonna return a string of the dt below. conditional depending on when it is.
+        if (dt - datetime.datetime.utcnow().replace(tzinfo=pytz.UTC)) < datetime.timedelta(hours=145):  # is the date < 145 hours away?
+            todaydaynum = datetime.datetime.strftime(datetime.datetime.today(), '%a')  # today's day #.
+            stringdaynum = datetime.datetime.strftime(dt, '%a')  # day of event.
+            # are the days of the week same or different?
+            if todaydaynum == stringdaynum: # same date. return w/o day of week.
+                return dt.strftime('%H:%M')  # ie: 19:05
+            else:  # not the same day of the week.
+                return dt.strftime('%a %H:%M')  # ie: Sat 19:05
+        else:  # later than 145 hours from now. add month/day@HH:MM.
             return dt.strftime('%m/%d@%H:%M')
 
     ######################################
