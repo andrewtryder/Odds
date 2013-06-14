@@ -240,6 +240,9 @@ class Odds(callbacks.Plugin):
         # now that we have XML, it must be processed differently depending on props/games.
         if optsport == "GOLF":  # specific handler for golf. we label sport but handle as prop.
             line = tree.findall('./Leagues/league[@IdLeague="%s"]/game' % validsports[optsport])
+            if not line:
+                irc.reply("ERROR: I did not find any {0} prop/future odds.".format(optsport))
+                return
             # we only grab the first [0]. we could do more than one.
             propname = line[0].attrib['htm']  # tournament here.
             props = []  # list to dump out in for processing.
