@@ -43,17 +43,17 @@ class Odds(callbacks.Plugin):
         def cachexmlcron():
             self.cachexml()
         try: # every 1hours make sure the schedule is fresh.
-            schedule.addPeriodicEvent(cachexmlcron, 3600, now=True, name='cachexml')
+            schedule.addPeriodicEvent(cachexmlcron, 3600, now=True, name='Odds-cachexml')
         except AssertionError:
             try:
-                schedule.removeEvent('cachexml')
+                schedule.removeEvent('Odds-cachexml')
             except KeyError:
                 pass
-            schedule.addPeriodicEvent(cachexmlcron, 3600, now=True, name='cachexml')
+            schedule.addPeriodicEvent(cachexmlcron, 3600, now=True, name='Odds-cachexml')
 
     def die(self):
         try:
-            schedule.removeEvent('cachexml')
+            schedule.removeEvent('Odds-cachexml')
         except KeyError:
             pass
         self.__parent.die()
