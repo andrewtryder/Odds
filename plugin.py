@@ -40,25 +40,25 @@ class Odds(callbacks.Plugin):
         self.displaytz = self.registryValue('displayTZ')
         self.XMLURL = 'http://lines.bookmaker.eu/'
         self.CACHEFILE = conf.supybot.directories.data.dirize("Odds.xml")
-        def cachexmlcron():
-            self.cachexml()
+        def oddscachexmlcron():
+            self.oddscachexml()
         try: # every 1hours make sure the schedule is fresh.
-            schedule.addPeriodicEvent(cachexmlcron, 3600, now=True, name='Odds-cachexml')
+            schedule.addPeriodicEvent(oddscachexmlcron, 3600, now=True, name='oddscachexml')
         except AssertionError:
             try:
-                schedule.removeEvent('Odds-cachexml')
+                schedule.removeEvent('oddscachexml')
             except KeyError:
                 pass
-            schedule.addPeriodicEvent(cachexmlcron, 3600, now=True, name='Odds-cachexml')
+            schedule.addPeriodicEvent(oddscachexmlcron, 3600, now=True, name='oddscachexml')
 
     def die(self):
         try:
-            schedule.removeEvent('Odds-cachexml')
+            schedule.removeEvent('oddscachexml')
         except KeyError:
             pass
         self.__parent.die()
 
-    def cachexml(self):
+    def oddscachexml(self):
         """Try and update the XMLTV cache."""
 
         self.log.info("CacheXML: Running...")
