@@ -167,7 +167,7 @@ class Odds(callbacks.Plugin):
         """Process a single XML line for a game/event."""
 
         tmp = {}  # dict container.
-        tmp['sport'] = game.get('idspt')
+        tmp['gpd'] = game.get('gpd')  # gameplayed? helpful for soccer.
         tmp['gametype'] = game.get('idgmtyp')  # gametype. used to detect props.
         tmp['date'] = game.get('gmdt')  # game date.
         tmp['time'] = game.get('gmtm')  # game time.
@@ -216,15 +216,6 @@ class Odds(callbacks.Plugin):
         tmp['tmname'] = prop.get('tmname').encode('utf-8')
         tmp['line'] = int(prop.get('odds'))  # to sort.
         return tmp
-
-    #########
-    # NOTES #
-    #########
-
-    # <league IdLeague="12003" IdSport="TNT" Description="GOLF PICK WINNER">
-    # <game idgm="1582092" idgmtyp="3" gmdt="20130613" idlg="0" gmtm="06:00:00" idspt="TNT" vpt="" hpt="" vnum="0"
-    # hnum="0" evtyp="" idgp="0" gpd="" vtm="" htm="WIN US OPEN- (JUNE 13-16) ALL IN" stats="false">
-    # and it's a prop. does IdLeague change?
 
     ####################
     # PUBLIC FUNCTIONS #
@@ -298,7 +289,7 @@ class Odds(callbacks.Plugin):
             for game in leagues:  # each entry is a game/match.
                 games.append(self._processgame(game))  # add processesed xml list.
             # now, we should sort by dt (epoch seconds) with output (earliest first).
-            games = sorted(games, key=itemgetter('newdt'))
+            games = sorted(games, key=itemgetter('date', 'time'))
 
         # now, we must preprocess the output in the dicts.
         # each sport is different and we append into a list for output.
@@ -339,14 +330,12 @@ class Odds(callbacks.Plugin):
         # handle college basketball output.
         elif optsport == "NCB":
             for (v) in games:
-                #if v['spread'] != "" and (v['gametype'] == "1" or v['gametype'] == "3" or v['gametype'] == "9"):
                 if v['haschild'] == "True":
                     output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'], v['home'],\
                         v['spread'], v['over'], self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
         # handle NBA output.
         elif optsport == "NBA":
             for (v) in games:
-                #if v['over'] is not None and (v['gametype'] == "1" or v['gametype'] == "3" or v['gametype'] == "9"):
                 if v['haschild'] == "True":
                     output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'], v['home'],\
                         v['spread'], v['over'], self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
@@ -354,21 +343,18 @@ class Odds(callbacks.Plugin):
         elif optsport in ('EPL', 'LALIGA', 'BUNDESLIGA', 'SERIEA', 'LIGUE1', 'MLS', 'UEFA-EUROPA', 'UEFA-CL',
                           'WCQ-UEFA', 'WCQ-CONMEBOL', 'WCQ-CAF', 'WCQ-CONCACAF', 'INTL-FRIENDLY'):
             for (v) in games:
-                #if v['haschild'] == "True": # make sure they're games.
-                if v['homeodds'] != '' and v['awayodds'] != '' or v['haschild'] == 'True':
+                if v['homeodds'] != '' and v['awayodds'] != '' and v['gpd'] == 'Game':
                      output.append("{0}@{1}  o/u: {2}  {3}/{4} (Draw: {5})  {6}".format(v['away'], v['home'],\
                         v['over'], self._fml(v['awayodds']), self._fml(v['homeodds']), self._fml(v['vspoddst']), v['newdt']))
         # handle UFC output.
         elif optsport in ('UFC-MMA', 'UFC-BELLATOR'):
             for (v) in games:
-                #if v['gametype'] in ("29", "2"): # or v['gametype'] == "2": # make sure it is a match
                 if v['homeodds'] != '' and v['awayodds'] != '':
                     output.append("{0} vs. {1}  {2}/{3}  {4}".format(v['away'], v['home'],\
                         self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
         # handle boxing output.
         elif optsport == "BOXING":
             for (v) in games:
-                # if v['gametype'] in ["2", "3"] or v['haschild'] == "True": # not sure if this will work or not.
                 if v['homeodds'] != '' and v['awayodds'] != '':
                     output.append("{0} vs. {1}  {2}/{3}  {4}".format(v['away'], v['home'],\
                         self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
