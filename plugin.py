@@ -235,7 +235,7 @@ class Odds(callbacks.Plugin):
                        'MLS':'10007', 'UEFA-CL':'10016', 'LIGUE1':'10005','BUNDESLIGA':'10004',
                        'SERIEA':'10002', 'UEFA-EUROPA':'12613', 'BOXING':'12064', 'TENNIS-M':'12331',
                        'TENNIS-W':'12332', 'AUSSIERULES':'12118', 'GOLF':'12003', 'WCQ-UEFA':'12321',
-                       'WCQ-CONMEBOL':'12451', 'WCQ-CAF':'12461', 'WCQ-CONCACAF':'12484' }
+                       'WCQ-CONMEBOL':'12451', 'WCQ-CAF':'12461', 'WCQ-CONCACAF':'12484', 'NASCAR':'12015'}
 
         if not optsport in validsports:  # error if not in above.
             validprops = { 'NFL-SUPERBOWL':'1561335', 'NFL-MVP':'1583283'}
@@ -255,7 +255,7 @@ class Odds(callbacks.Plugin):
             return
 
         # now that we have XML, it must be processed differently depending on props/games.
-        if optsport == "GOLF":  # specific handler for golf. we label sport but handle as prop.
+        if optsport in ("GOLF", "NASCAR"):  # specific handler for golf. we label sport but handle as prop.
             line = tree.findall('./Leagues/league[@IdLeague="%s"]/game' % validsports[optsport])
             if not line:
                 irc.reply("ERROR: I did not find any {0} prop/future odds.".format(optsport))
@@ -295,8 +295,8 @@ class Odds(callbacks.Plugin):
         # each sport is different and we append into a list for output.
         output = []
         # first, handle props and prop-like sports (GOLF ONLY).
-        if optsport == "PROP" or optsport == "GOLF":  # we join all of the props/lines into one entry. title.
-            proplist = " | ".join([q['tmname'].title() + " (" + self._fml(q['line']) + ")" for q in props])
+        if optsport == "PROP" or optsport in ("GOLF", "NASCAR"):  # we join all of the props/lines into one entry. title.
+            proplist = " | ".join([q['tmname'].title().strip() + " (" + self._fml(q['line']) + ")" for q in props])
             output.append("{0} :: {1}".format(ircutils.mircColor(propname, 'red'), proplist))
         # REST ARE NON-PROP. EACH HANDLES A SPORT DIFFERENTLY.
         # handle NFL football.
@@ -342,7 +342,7 @@ class Odds(callbacks.Plugin):
         # handle soccer output.
         elif optsport in ('EPL', 'LALIGA', 'BUNDESLIGA', 'SERIEA', 'LIGUE1', 'MLS', 'UEFA-EUROPA', 'UEFA-CL',
                           'WCQ-UEFA', 'WCQ-CONMEBOL', 'WCQ-CAF', 'WCQ-CONCACAF', 'INTL-FRIENDLY'):
-            for (v) in games:
+            for (v) in games:  # we check for Game below because it blocks out 1H/2H lines.
                 if v['homeodds'] != '' and v['awayodds'] != '' and v['gpd'] == 'Game':
                      output.append("{0}@{1}  o/u: {2}  {3}/{4} (Draw: {5})  {6}".format(v['away'], v['home'],\
                         v['over'], self._fml(v['awayodds']), self._fml(v['homeodds']), self._fml(v['vspoddst']), v['newdt']))
