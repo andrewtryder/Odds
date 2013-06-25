@@ -235,7 +235,8 @@ class Odds(callbacks.Plugin):
                        'MLS':'10007', 'UEFA-CL':'10016', 'LIGUE1':'10005','BUNDESLIGA':'10004',
                        'SERIEA':'10002', 'UEFA-EUROPA':'12613', 'BOXING':'12064', 'TENNIS-M':'12331',
                        'TENNIS-W':'12332', 'AUSSIERULES':'12118', 'GOLF':'12003', 'WCQ-UEFA':'12321',
-                       'WCQ-CONMEBOL':'12451', 'WCQ-CAF':'12461', 'WCQ-CONCACAF':'12484', 'NASCAR':'12015'}
+                       'WCQ-CONMEBOL':'12451', 'WCQ-CAF':'12461', 'WCQ-CONCACAF':'12484', 'NASCAR':'12015',
+                       'CFL':'12145'}
 
         if not optsport in validsports:  # error if not in above.
             validprops = { 'NFL-SUPERBOWL':'1561335', 'NFL-MVP':'1583283'}
@@ -300,7 +301,7 @@ class Odds(callbacks.Plugin):
             output.append("{0} :: {1}".format(ircutils.mircColor(propname, 'red'), proplist))
         # REST ARE NON-PROP. EACH HANDLES A SPORT DIFFERENTLY.
         # handle NFL football.
-        elif optsport == "NFL":
+        elif optsport in ("NFL", "CFL"):
             for (v) in games:
                 if v['spread'] != "":
                     output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'], v['home'],\
