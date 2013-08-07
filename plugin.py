@@ -239,7 +239,7 @@ class Odds(callbacks.Plugin):
                        'CFL':'12145', 'CFB':'2'}
 
         if not optsport in validsports:  # error if not in above.
-            validprops = { 'NFL-SUPERBOWL':'1561335', 'NFL-MVP':'1583283'}
+            validprops = { 'NFL-SUPERBOWL':'1561335', 'NFL-MVP':'1583283', 'BCS':'1609313'}
             if optsport in validprops:
                 optprop = optsport
                 optsport = "PROP"
