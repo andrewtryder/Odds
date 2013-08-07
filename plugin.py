@@ -301,7 +301,7 @@ class Odds(callbacks.Plugin):
             output.append("{0} :: {1}".format(ircutils.mircColor(propname, 'red'), proplist))
         # REST ARE NON-PROP. EACH HANDLES A SPORT DIFFERENTLY.
         # handle NFL football.
-        elif optsport in ("NFL", "CFL"):
+        elif optsport in ("NFL", "CFL", "CFB"):
             for (v) in games:
                 if v['spread'] != "":
                     output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'], v['home'],\
