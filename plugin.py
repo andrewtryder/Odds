@@ -236,7 +236,7 @@ class Odds(callbacks.Plugin):
                        'SERIEA':'10002', 'UEFA-EUROPA':'12613', 'BOXING':'12064', 'TENNIS-M':'12331',
                        'TENNIS-W':'12332', 'AUSSIERULES':'12118', 'GOLF':'12003', 'WCQ-UEFA':'12321',
                        'WCQ-CONMEBOL':'12451', 'WCQ-CAF':'12461', 'WCQ-CONCACAF':'12484', 'NASCAR':'12015',
-                       'CFL':'12145'}
+                       'CFL':'12145', 'CFB':'2'}
 
         if not optsport in validsports:  # error if not in above.
             validprops = { 'NFL-SUPERBOWL':'1561335', 'NFL-MVP':'1583283'}
