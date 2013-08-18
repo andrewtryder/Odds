@@ -23,6 +23,7 @@ def configure(advanced):
 Odds = conf.registerPlugin('Odds')
 # This is where your configuration variables (if any) should go.  For example:
 conf.registerGlobalValue(Odds, 'displayTZ', registry.String("US/Eastern", _("""What TZ to display odds in? (Don't change unless you know a valid TZ.)""")))
+conf.registerChannelValue(Odds, 'disableANSI', registry.Boolean(False, _("""Disable ANSI in output for channel?""")))
 
 
 # vim:set shiftwidth=4 tabstop=4 expandtab textwidth=250:

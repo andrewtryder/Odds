@@ -361,6 +361,9 @@ class Odds(callbacks.Plugin):
                         self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
 
         # output time.
+        # before we do anything, check if we should strip ansi.
+        if self.registryValue('disableANSI', msg.args[0]):
+            output = [ircutils.stripFormatting(i) for i in output]
         # checks if optinput (looking for something)
         if not optinput or optsport == "PROP":  # just display the games.
             outlength = len(output)  # calc once.
