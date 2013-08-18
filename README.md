@@ -24,18 +24,3 @@ Instructions
 
     First, if you're running Odds2, you can uninstall (rm -rf) and unload.
     Next, download, install and load this. There are no configuration variables (yet).
-
-Notes
-
-    Misc notes and links:
-
-    http://forum.punterslounge.com/threads/30348-XML-Odds-feed
-    http://forum.sbrforum.com/handicapper-think-tank/538127-sportsbook-xml-feeds-p2.html
-    http://livelines.betonline.com/sys/LineXML/LiveLineObjXml.asp?sport=Basketball&subsport=NBA
-    http://xmlfeed.intertops.com/XMLOddsFeed/IntertopsOdds.aspx?all=true&lan=E&
-    http://xmlfeed.intertops.com/XMLOddsFeed/
-    http://api.pinnaclesports.com/v1/feed?sportid=4&leagueid=487&clientid=EH579260&apikey=<apikey>&oddsformat=0&islive=0&currencycode=USD
-    http://pdom.org/wiki/Беттинг
-    http://pricefeeds.williamhill.com/bet/en-gb?action=GoPriceFeed
-    http://www.pinnaclesports.com/apimanual/commands.aspx
-    https://forum.bdp.betfair.com/showthread.php?t=1832&page=2
