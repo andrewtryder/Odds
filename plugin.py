@@ -286,8 +286,7 @@ class Odds(callbacks.Plugin):
             if isinstance(catids, list):  # we do have a list, not a string (CFB)
                 l = []  # tmp container.
                 for catid in catids:  # iterate through the category ids in the list.
-                    g = tree.findall('./Leagues/league[@IdLeague="%s"]/game' % (catid))  # find.
-                    l.append(g)  # append to tmp container.
+                    l.append(tree.findall('./Leagues/league[@IdLeague="%s"]/game' % (catid)))  # find like normal and append to tmp container.
                 # we're done iterating over the ids. now merge these into one (flatten).
                 leagues = [x for sublist in l for x in sublist]
             else:  # catids = string (single)
