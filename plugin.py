@@ -236,7 +236,7 @@ class Odds(callbacks.Plugin):
                        'SERIEA':'10002', 'UEFA-EUROPA':'12613', 'BOXING':'12064', 'TENNIS-M':'12331',
                        'TENNIS-W':'12332', 'AUSSIERULES':'12118', 'GOLF':'12003', 'WCQ-UEFA':'12321',
                        'WCQ-CONMEBOL':'12451', 'WCQ-CAF':'12461', 'WCQ-CONCACAF':'12484', 'NASCAR':'12015',
-                       'CFL':'12145', 'CFB':'2'}
+                       'CFL':'12145', 'CFB':['2', '12734'], 'CONCACAF-CL':'12442' }
 
         if not optsport in validsports:  # error if not in above.
             validprops = { 'NFL-SUPERBOWL':'1561335', 'NFL-MVP':'1583283', 'BCS':'1609313'}
@@ -281,8 +281,19 @@ class Odds(callbacks.Plugin):
             # now sort (lowest first) before we prep the output. (creates a list w/dict in it.)
             props = sorted(props, key=itemgetter('line'))
         else:  # processing GAMES here not props.
-            leagues = tree.findall('./Leagues/league[@IdLeague="%s"]/game' % (validsports[optsport]))
-            if len(leagues) == 0:  # check if empty (no games) or nothing found (wrong time of the year).
+            # first, we must check if sportid from the dict is a string or list (list for CFB)
+            catids = validsports[optsport]
+            if isinstance(catids, list):  # we do have a list, not a string (CFB)
+                l = []  # tmp container.
+                for catid in catids:  # iterate through the category ids in the list.
+                    g = tree.findall('./Leagues/league[@IdLeague="%s"]/game' % (catid))  # find.
+                    l.append(g)  # append to tmp container.
+                # we're done iterating over the ids. now merge these into one (flatten).
+                leagues = [x for sublist in l for x in sublist]
+            else:  # catids = string (single)
+                leagues = tree.findall('./Leagues/league[@IdLeague="%s"]/game' % (validsports[optsport]))
+            # now, lets check if what we got back looking for games in leagues is empty (no games, wrong time of year, etc).
+            if len(leagues) == 0:
                 irc.reply("ERROR: I did not find any events in the {0} category.".format(optsport))
                 return
             # we must process each "game" or match.
@@ -342,7 +353,7 @@ class Odds(callbacks.Plugin):
                         v['spread'], v['over'], self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
         # handle soccer output.
         elif optsport in ('EPL', 'LALIGA', 'BUNDESLIGA', 'SERIEA', 'LIGUE1', 'MLS', 'UEFA-EUROPA', 'UEFA-CL',
-                          'WCQ-UEFA', 'WCQ-CONMEBOL', 'WCQ-CAF', 'WCQ-CONCACAF', 'INTL-FRIENDLY'):
+                          'WCQ-UEFA', 'WCQ-CONMEBOL', 'WCQ-CAF', 'WCQ-CONCACAF', 'INTL-FRIENDLY', 'CONCACAF-CL'):
             for (v) in games:  # we check for Game below because it blocks out 1H/2H lines.
                 if v['homeodds'] != '' and v['awayodds'] != '' and v['gpd'] == 'Game':
                      output.append("{0}@{1}  o/u: {2}  {3}/{4} (Draw: {5})  {6}".format(v['away'], v['home'],\
@@ -360,10 +371,11 @@ class Odds(callbacks.Plugin):
                     output.append("{0} vs. {1}  {2}/{3}  {4}".format(v['away'], v['home'],\
                         self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
 
-        # output time.
         # before we do anything, check if we should strip ansi.
         if self.registryValue('disableANSI', msg.args[0]):
             output = [ircutils.stripFormatting(i) for i in output]
+
+        # OUTPUT TIME.
         # checks if optinput (looking for something)
         if not optinput or optsport == "PROP":  # just display the games.
             outlength = len(output)  # calc once.
