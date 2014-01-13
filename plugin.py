@@ -319,13 +319,15 @@ class Odds(callbacks.Plugin):
         # handle tennis.
         elif optsport in ('TENNIS-M', 'TENNIS-W'):
             for v in games:
-                output.append("{0}@{1}  {2}/{3}  {4}".format(v['away'], v['home'],\
-                    self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
+                if v['homeodds'] != '':
+                    output.append("{0}@{1}  {2}/{3}  {4}".format(v['away'], v['home'],\
+                        self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
         # handle aussie rules.
         elif optsport == "AUSSIERULES":
             for (v) in games:
-                output.append("{0}@{1}  {2}/{3}  {4}".format(v['away'], v['home'],\
-                    self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
+                if v['homeodds'] != '':
+                    output.append("{0}@{1}  {2}/{3}  {4}".format(v['away'], v['home'],\
+                        self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
         # handle baseball.
         elif optsport == "MLB":
             for (v) in games:
@@ -378,20 +380,28 @@ class Odds(callbacks.Plugin):
         # checks if optinput (looking for something)
         if not optinput or optsport == "PROP":  # just display the games.
             outlength = len(output)  # calc once.
+            # determine how to output based on outlength.
             if outlength == 0:  # nothing.
                 irc.reply("Sorry, I did not find any active odds in {0}.".format(optsport))
-            if outlength <= 9:  # 9 or under, one per line.
-                for each in output: irc.reply(each)
-            else:  # more than 9, we batch 4 per line.
+            elif outlength <= 6:  # 7 or under
+                for each in output:  # one per line.
+                    irc.reply(each)
+            else:  # more than 9, we batch 4 per line. we also cap the # of lines.
+                count = 0
                 for N in self._batch(output, 4):
-                    irc.reply(" | ".join([item for item in N]))
+                    if count < 6:  # 5 and under.
+                        irc.reply(" | ".join([item for item in N]))
+                        count += 1  # ++
+                    else:  # 6 and up.
+                        irc.reply("I found too many results in the {0} category. Please specify a string to search for.".format(optsport))
+                        break
         else:  # we do want to limit output to only matching items.
             count = 0  # to handle a max # of 5.
             for each in output:  # iterate through output list.
                 if optinput.lower() in each.lower():  # match.
                     if count < 5:  # output matching items.
                         irc.reply(each)
-                        count += 1 # ++
+                        count += 1  # ++
                     else:  # too many to output after 5. breaks,
                         irc.reply("I found too many results for '{0}'. Please specify something more specific".format(optinput))
                         break
