@@ -319,7 +319,7 @@ class Odds(callbacks.Plugin):
         # handle tennis.
         elif optsport in ('TENNIS-M', 'TENNIS-W'):
             for v in games:
-                if v['homeodds'] != '':
+                if v['homeodds'] != '' and not v['away'].endswith('SET'):  # haschild="True" related="False"
                     output.append("{0}@{1}  {2}/{3}  {4}".format(v['away'], v['home'],\
                         self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
         # handle aussie rules.
