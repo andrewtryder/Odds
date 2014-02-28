@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###
-# Copyright (c) 2013, spline
+# Copyright (c) 2013-2014, spline
 # All rights reserved.
 #
 #
@@ -250,8 +250,8 @@ class Odds(callbacks.Plugin):
         # now try and parse/open XML.
         try:
             tree = ElementTree.parse(self.CACHEFILE)
-        except ElementTree.ParseError, e:
-            self.log.error("ERROR: parsing cached XML :: {0}".format(e))
+        except Exception, e:
+            self.log.info("ERROR: parsing cached XML :: {0}".format(e))
             irc.reply("ERROR: Something broke trying to parse the XML. Check logs.")
             return
 
@@ -292,9 +292,11 @@ class Odds(callbacks.Plugin):
             else:  # catids = string (single)
                 leagues = tree.findall('./Leagues/league[@IdLeague="%s"]/game' % (validsports[optsport]))
             # now, lets check if what we got back looking for games in leagues is empty (no games, wrong time of year, etc).
+            #self.log.info("WW: {1} LEAGUES: {0}".format(leagues, validsports[optsport]))
             if len(leagues) == 0:
                 irc.reply("ERROR: I did not find any events in the {0} category.".format(optsport))
                 return
+            
             # we must process each "game" or match.
             games = []  # list to store dicts of processed games.
             for game in leagues:  # each entry is a game/match.
@@ -349,7 +351,7 @@ class Odds(callbacks.Plugin):
         # handle NBA output.
         elif optsport == "NBA":
             for (v) in games:
-                if v['haschild'] == "True":
+                if ((v['haschild'] == "True") and (v['spread'] != "" and v['over'] != "")):
                     output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'], v['home'],\
                         v['spread'], v['over'], self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
         # handle soccer output.
