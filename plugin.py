@@ -68,23 +68,29 @@ class Odds(callbacks.Plugin):
             try:
                 response = utils.web.getUrl(self.XMLURL)
                 self.log.info("CacheXML: Fetched XMLURL at {0}".format(self.XMLURL))
-            except utils.web.Error as e:
-                self.log.error("CacheXML: Failed to open: {0} ({1})".format(self.XMLURL, e))
-                self.log.error("CacheXML: I cannot update the Cache.")
+            except Exception, e:
+                self.log.info("CacheXML: Failed to open: {0} ({1})".format(self.XMLURL, e))
+                self.log.info("CacheXML: I cannot update the Cache.")
                 return
             # we have response object. test and verify the XML.
             try:  # try to parse for validity.
-                tree = ElementTree.fromstring(response)  # look for an error code.
-                if tree.attrib['ErrorCode'] != "0":  # 0 means no error. anything else = error.
-                    self.log.error("CacheXML: ERROR in XML fetched. :: {0}".format(tree.attrib['ErrorMessage']))
-                    return
-            except ElementTree.ParseError, e: # if there is an exception, report and return.
-                self.log.error("CacheXML: ERROR PARSING received XML: {0}".format(e))
+                ElementTree.fromstring(response)  # look for an error code.
+            except Exception, e: # if there is an exception, report and return.
+                self.log.info("CacheXML: ERROR PARSING received XML: {0}".format(e))
+                self.log.info("RESPONSE IS: {0}".format(response))
                 return
-            # we have response object. write to cachefile.
+            # we have response object. delete old file 
+            try:
+                os.remove(self.CACHEFILE)
+            except Exception, e:
+                self.log.info("CacheXML: Error deleting CACHEFILE: {0}".format(e))
+            # and write to cachefile.
             with open(self.CACHEFILE, 'w') as cache:
-                cache.writelines(response)
-                self.log.info("CacheXML: Wrote XMLURL to cache.")
+                try:
+                    cache.writelines(response)
+                    self.log.info("CacheXML: Wrote XMLURL to cache.")
+                except Exception, e:
+                    self.log.info("CacheXML: Error writing XMLURL to cache: {0}".format(e))
         else:  # cachefile is good and intact.
             self.log.info("CacheXML: XML file is good.")
 
