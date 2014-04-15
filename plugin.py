@@ -321,7 +321,7 @@ class Odds(callbacks.Plugin):
         # handle NFL football.
         elif optsport in ("NFL", "CFL", "CFB"):
             for (v) in games:
-                if v['spread'] != "":
+                if v['spread'] != "" and v['homeodds'] != '':
                     output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'], v['home'],\
                         v['spread'], v['over'], self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
         # handle tennis.
@@ -339,19 +339,19 @@ class Odds(callbacks.Plugin):
         # handle baseball.
         elif optsport == "MLB":
             for (v) in games:
-                if v['haschild'] == "True":
+                if v['haschild'] == "True" and v['homeodds'] != '':
                     output.append("{0}@{1}  {2}/{3}  {4}".format(v['away'], v['home'],\
                         self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
         # handle hockey.
         elif optsport == "NHL":
             for (v) in games:
-                if v['haschild'] == "True":
+                if v['haschild'] == "True" and v['homeodds'] != '':
                     output.append("{0}@{1}  o/u: {2}  {3}/{4}  {5}".format(v['away'], v['home'],\
                         v['over'], self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
         # handle college basketball output.
         elif optsport == "NCB":
             for (v) in games:
-                if v['haschild'] == "True":
+                if v['haschild'] == "True" and v['homeodds'] != '':
                     output.append("{0}@{1}[{2}]  o/u: {3}  {4}/{5}  {6}".format(v['away'], v['home'],\
                         v['spread'], v['over'], self._fml(v['awayodds']), self._fml(v['homeodds']), v['newdt']))
         # handle NBA output.
