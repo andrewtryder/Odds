@@ -364,7 +364,7 @@ class Odds(callbacks.Plugin):
         elif optsport in ('EPL', 'LALIGA', 'BUNDESLIGA', 'SERIEA', 'LIGUE1', 'MLS', 'UEFA-EUROPA', 'UEFA-CL',
                           'WCQ-UEFA', 'WCQ-CONMEBOL', 'WCQ-CAF', 'WCQ-CONCACAF', 'INTL-FRIENDLY', 'CONCACAF-CL'):
             for (v) in games:  # we check for Game below because it blocks out 1H/2H lines.
-                if v['homeodds'] != '' and v['awayodds'] != '' and v['gpd'] == 'Game':
+                if v['haschild'] == "True" and v['homeodds'] != '' and v['awayodds'] != '' and v['gpd'] == 'Game':
                      output.append("{0}@{1}  o/u: {2}  {3}/{4} (Draw: {5})  {6}".format(v['away'], v['home'],\
                         v['over'], self._fml(v['awayodds']), self._fml(v['homeodds']), self._fml(v['vspoddst']), v['newdt']))
         # handle UFC output.
