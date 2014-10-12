@@ -1,26 +1,53 @@
-Supybot-Odds
-============
+[![Build Status](https://travis-ci.org/reticulatingspline/Odds.svg?branch=master)](https://travis-ci.org/reticulatingspline/Odds)
 
-Description
+# Odds plugin for Supybot / Limnoria
 
-    Supybot plugin for displaying sports MLB/NFL/NHL/NBA/MMA/NCAA/Tennis/AFL
-    (College) Football/Basketball lines/odds/betting.
+## Introduction
 
-History
+People are always looking for the lines / spreads / odds on various sporting events. I made
+this plugin to service that need. Please note, the source I use doesn't always have the
+most up-to-date or reliable lines. I intended this plugin as an information-tool only.
+It supports almost all sports out there from NFL, MLB, CFB, NBA, NHL, Tennis, etc.
 
-    This is my third "Odds" plugin for Supybot. I finally found a better provider that gives more
-    reliable odds and decided to rewrite and adopt this over to it. It looks the same as my older
-    "Odds2" plugin, but has a better core and also caches the data. The cache will prevent a game
-    from disappearing when something begins (because betting for the match is off), and will also
-    still display odds if the provider has gone down.
+## Install
 
-Disclaimer
+You will need a working Limnoria bot on Python 2.7 for this to work.
 
-    Obviously, gambling is illegal in many places. I don't condone nor support it. The intent of
-    this plugin is for a user on IRC to get an idea of who is favored in a game, which a line or
-    odds provide.
+Go into your Limnoria plugin dir, usually ~/supybot/plugins and run:
 
-Instructions
+```
+git clone https://github.com/reticulatingspline/Odds
+```
 
-    First, if you're running Odds2, you can uninstall (rm -rf) and unload.
-    Next, download, install and load this. There are no configuration variables (yet).
+To install additional requirements, run:
+
+```
+pip install -r requirements.txt 
+```
+
+Next, load the plugin:
+
+```
+/msg bot load Odds
+```
+
+You are done.
+
+## Example Usage
+
+```
+<spline> @odds NFL denver
+<myybot> DENVER@NY JETS[+10]  o/u: 47.5  -450/+355  13:00
+<myybot> @odds MLB
+<myybot> SFO GIANTS@STL CARDINALS  +108/-118  20:05
+<myybot> BAL ORIOLES@KC ROYALS  -109/-101  Mon 20:05
+```
+
+## About
+
+All of my plugins are free and open source. When I first started out, one of the main reasons I was
+able to learn was due to other code out there. If you find a bug or would like an improvement, feel
+free to give me a message on IRC or fork and submit a pull request. Many hours do go into each plugin,
+so, if you're feeling generous, I do accept donations via Amazon or browse my [wish list](http://amzn.com/w/380JKXY7P5IKE).
+
+I'm always looking for work, so if you are in need of a custom feature, plugin or something bigger, contact me via GitHub or IRC.
