@@ -271,7 +271,10 @@ class Odds(callbacks.Plugin):
             propname = line[0].attrib['htm']  # tournament here.
             props = []  # list to dump out in for processing.
             for l in (line[0].findall('line')):  # we enumerate over all "line" in the entry.
-                props.append(self._processprop(l))  # send to prop handler and append.
+                try:
+                    props.append(self._processprop(l))  # send to prop handler and append.
+                except:
+                    continue
             # now sort (lowest first) before we prep the output. (creates a list w/dict in it.)
             props = sorted(props, key=itemgetter('line'))
         elif optsport == "PROP":  # processing PROPS/futures here.
